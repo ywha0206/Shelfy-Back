@@ -1,0 +1,44 @@
+logging:
+  file:
+    name: /logs/sboard.log
+  level:
+    jdbc:
+      resultsettable: debug
+      sqlonly: debug
+      sqltiming: debug
+    org:
+      hibernate:
+        orm:
+          jdbc:
+            bind: trace
+        sql: debug
+    root: info
+
+server:
+  port: 8082
+  servlet:
+    context-path: /
+
+# mybatis ?? ??
+mybatis:
+  # resources/mapper/ ? ?? ?? xml ??
+  mapper-locations: mapper/*.xml
+
+spring:
+  application:
+    name: backend_shelfy_team_project
+  datasource:
+    url: jdbc:mysql://13.124.168.217:3306/shelfy?useSSL=false&serverTimezone=UTC
+    username: shelfy
+    password: "Asd789##"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  devtools:
+    livereload:
+      enabled: true
+
+aladin:
+  apiKey: "ttbrkddmsrud271916001"  # ???? API ?
+  baseUrl: "https://www.aladin.co.kr/ttb/api/ItemSearch.aspx"
+
+
+

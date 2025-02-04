@@ -3,6 +3,14 @@ package com.shelfy.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+/*
+     날짜 : 2025/01/30
+     이름 : 강은경
+     내용 : AladinProperties 생성
+
+*/
+
+
 @Component
 @ConfigurationProperties(prefix = "aladin")
 public class AladinProperties {

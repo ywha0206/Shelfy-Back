@@ -35,10 +35,13 @@ spring:
   devtools:
     livereload:
       enabled: true
+  data:
+    mongodb:
+      uri: mongodb://root:Arfarf7894%40@13.124.168.217:27017/shelfy?authSource=admin
 
 aladin:
   apiKey: "ttbrkddmsrud271916001"  # ???? API ?
-  baseUrl: "https://www.aladin.co.kr/ttb/api/ItemSearch.aspx"
+  baseUrl: "https://www.aladin.co.kr/ttb/api"
 
 
 

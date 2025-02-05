@@ -20,26 +20,26 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    // JWT 서명에 사용할 비밀키
-    @Value("${jwt.expiration}")
-    private String jwtSecret;
-
-    @Value("${jwt.expiration}")
-    private long jwtExpiration;
-
-    // JWT 토큰 생성
-    public String generateToken(Authentication authentication) {
-        String username = authentication.getName();
-        Date now = new Date();
-        Date expiration = new Date(now.getTime() + jwtExpiration);
-
-        return Jwts.builder()
-                .setSubject(username)
-                .setIssuedAt(now)
-                .setExpiration(expiration)
-                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()),SignatureAlgorithm.ES512)
-                .compact();
-    }
+//    // JWT 서명에 사용할 비밀키
+//    @Value("${jwt.expiration}")
+//    private String jwtSecret;
+//
+//    @Value("${jwt.expiration}")
+//    private long jwtExpiration;
+//
+//    // JWT 토큰 생성
+//    public String generateToken(Authentication authentication) {
+//        String username = authentication.getName();
+//        Date now = new Date();
+//        Date expiration = new Date(now.getTime() + jwtExpiration);
+//
+//        return Jwts.builder()
+//                .setSubject(username)
+//                .setIssuedAt(now)
+//                .setExpiration(expiration)
+//                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()),SignatureAlgorithm.ES512)
+//                .compact();
+//    }
 
 
 }

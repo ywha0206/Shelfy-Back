@@ -16,23 +16,29 @@ import java.util.List;
 */
 
 @RestController
-@RequestMapping("/api/books")
+@RequestMapping("/api/aladin")
 @RequiredArgsConstructor
 @Log4j2
 public class AladinController {
 
     private final AladinService aladinService;
 
-    // 📌 1차 검색 (도서 목록 반환 + DB 저장)
+    // 검색 api로 도서 조회
     @GetMapping("/search")
     public List<BookDTO> searchBooks(@RequestParam String query) {
-        return aladinService.searchBooks(query);
+
+        log.info("query : " + query);
+
+        List<BookDTO> bookDTOS = aladinService.searchByAladin(query);
+        log.info("알라딘 검색 api로 반환되는 bookDTOS : " + bookDTOS);
+
+        return bookDTOS;
     }
 
     // 📌 2차 검색 (ISBN으로 페이지 수 가져오기) - 책 검색 후 상세페이지
-    @GetMapping("/detail")
-    public BookDTO getBookDetail(@RequestParam String bookIsbn) {
-        log.info(bookIsbn);
-        return aladinService.getBookDetail(bookIsbn);
-    }
+//    @GetMapping("/detail")
+//    public BookDTO getBookDetail(@RequestParam String bookIsbn) {
+//        log.info(bookIsbn);
+//        return aladinService.getBookDetail(bookIsbn);
+//    }
 }

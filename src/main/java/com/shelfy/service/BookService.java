@@ -1,82 +1,117 @@
 package com.shelfy.service;
 
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.DuplicateKeyException;
 import com.shelfy.config.AladinProperties;
+import com.shelfy.document.BookDocument;
 import com.shelfy.dto.BookDTO;
 import com.shelfy.dto.BookResponseDTO;
 import com.shelfy.mapper.BookMapper;
+import com.shelfy.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
 /*
-     날짜 : 2025/01/30
+     날짜 : 2025/02/04
      이름 : 강은경
-     내용 : AladinService 생성
+     내용 : BookService 생성
 
 */
 @Service
 @RequiredArgsConstructor
 @Log4j2
 @Transactional
-public class AladinService {
+public class BookService {
 
-    private final RestTemplate restTemplate;
-    private final AladinProperties aladinProperties;
-    private final ObjectMapper objectMapper = new ObjectMapper(); // JSON 변환기
+
+    private final AladinService aladinService;
+    private final BookRepository bookRepository;
 
     /**
-     * 도서 검색 API
-     * @param query 검색어
-     * @return 검색된 도서 목록 (BookDTO 리스트)
+     * 책 검색 메서드
+     * @param query
+     * @return List<BookDTO>
      */
-    public List<BookDTO> searchByAladin(String query) {
+    public List<BookDTO> searchBooks(String query) {
 
-        // 검색 요청 url
-        // 문자열 포맷팅 > "%s"는 문자열값을 삽입할 자리 표시자
-        String searchUrl = String.format(
-                "%s/ItemSearch.aspx?TTBKey=%s&Query=%s&QueryType=Keyword&SearchTarget=Book&Output=js",
-                aladinProperties.getBaseUrl(), aladinProperties.getApiKey(), query
-        );
-        log.info("검색 url : " + searchUrl);
-        // https://www.aladin.co.kr/ttb/api/ItemSearch.aspx?TTBKey=ttbrkddmsrud271916001&Query=한강&QueryType=Title&MaxResults=10&Start=1&SearchTarget=Book&Output=js
+        // hashmap
+        // api 요청하기전에 query로 조회한 데이터가 내 db에 해당 값이 존재하는지 확인해서 있으면 그냥 반환하고 없으면 api요청 보내야함 ****
+        // 먼저 내 db에서 title, author, publisher로 책 검색
+        List<BookDocument> foundBooks = bookRepository.findAllByBookTitle(query);
+        log.info("foundBooks : " + foundBooks);
 
-        try {
-            // API 응답을 String으로 받음
-            String response = restTemplate.getForObject(searchUrl, String.class);
-            log.info("response : " + response);
+        // 결과 있으면 반환
+        if (!foundBooks.isEmpty()) {
+            return foundBooks.stream().map(this::convertToDTO).collect(Collectors.toList());
+        } else {
+            // 책이 존재하지 않으면 API 요청
+            // 알라딘 검색 api 호출
+            List<BookDTO> bookDTOList = aladinService.searchByAladin(query);
+            log.info("알라딘 검색 응답받은 bookDTOList : " + bookDTOList);
 
-            // 응답이 null인 경우 처리
-            if (response == null) {
-                log.error("API 응답이 null입니다.");
-                return null;
+            // book 테이블에 insert (간혹 isbn이 비어있는 책이 존재해서 isbn이 없는 책은 필터링해서 저장 안 시킴)
+            if (bookDTOList != null && !bookDTOList.isEmpty()) {
+                List<BookDocument> bookDocuments = bookDTOList.stream()
+                        .map(BookDTO::toDocument)
+                        .filter(bookDocument -> bookDocument.getBookIsbn() != null && !bookDocument.getBookIsbn().isEmpty())
+                        .toList();
+
+                log.info("필터링된 bookDocuments : " + bookDocuments);
+                 
+                if (!bookDocuments.isEmpty()) {
+                    try {
+                        // saveAll 메서드를 통해 모든 문서를 저장
+                        // stream map
+                        List<BookDocument> savedDocuments = bookRepository.saveAll(bookDocuments);
+                        log.info("저장된 도서 수 : " + savedDocuments.size());
+
+                        // 저장된 ID를 BookDTO에 설정
+                        for (int i = 0; i < savedDocuments.size(); i++) {
+                            bookDTOList.get(i).setBookId(savedDocuments.get(i).getBookId());
+                        }
+
+                        return bookDTOList;
+
+                    } catch (Exception e) {
+                        log.error("저장 중 오류 발생: " + e.getMessage());
+                    }
+                } else {
+                    // API 요청 결과가 null인 경우 빈 리스트 반환
+                    return Collections.emptyList();
+                }
+            } else {
+                return Collections.emptyList();
             }
 
-            // 응답 후처리 및 JSON 파싱
-            // 마지막 `;` 때문에 json 파싱 오류 발생 > 제거
-            response = response.replaceAll(";$", "").replace("'", "\"");
-            BookResponseDTO bookResponse = objectMapper.readValue(response, BookResponseDTO.class);
-            log.info("bookResponse : " + bookResponse);
-
-            return bookResponse.getItem(); // 검색된 도서 목록 반환
-
-        } catch (JsonMappingException e) {
-            log.error("JSON 매핑 오류: " + e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("알 수 없는 오류: " + e.getMessage(), e);
+            return bookDTOList;
         }
-        return null; // 오류 발생 시 null 반환
+
     }
 
 
 
 
+    // bookDocument > bookDTO로 변환
+    private BookDTO convertToDTO(BookDocument bookDocument) {
+        BookDTO bookDTO = new BookDTO();
+        bookDTO.setBookId(bookDocument.getBookId());
+        bookDTO.setBookImage(bookDocument.getBookImage());
+        bookDTO.setBookTitle(bookDocument.getBookTitle());
+        bookDTO.setBookDesc(bookDocument.getBookDesc());
+        bookDTO.setBookAuthor(bookDocument.getBookAuthor());
+        bookDTO.setBookPublisher(bookDocument.getBookPublisher());
+        bookDTO.setBookIsbn(bookDocument.getBookIsbn());
+        bookDTO.setBookPage(bookDocument.getBookPage());
+        bookDTO.setBookPublishedAt(bookDocument.getBookPublishedAt());
+        return bookDTO;
+    }
 
 
     // 1차 검색 > db 저장

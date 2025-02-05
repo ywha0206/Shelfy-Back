@@ -44,7 +44,7 @@ public class BookService {
         // hashmap
         // api 요청하기전에 query로 조회한 데이터가 내 db에 해당 값이 존재하는지 확인해서 있으면 그냥 반환하고 없으면 api요청 보내야함 ****
         // 먼저 내 db에서 title, author, publisher로 책 검색
-        List<BookDocument> foundBooks = bookRepository.findAllByBookTitle(query);
+        List<BookDocument> foundBooks = bookRepository.findByBookTitleContainingIgnoreCaseOrBookAuthorContainingIgnoreCaseOrBookPublisherContainingIgnoreCase(query, query, query);
         log.info("foundBooks : " + foundBooks);
 
         // 결과 있으면 반환
@@ -94,6 +94,7 @@ public class BookService {
         }
 
     }
+
 
 
 

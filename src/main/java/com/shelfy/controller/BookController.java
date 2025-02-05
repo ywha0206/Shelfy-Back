@@ -2,6 +2,7 @@ package com.shelfy.controller;
 
 import com.shelfy.document.BookDocument;
 import com.shelfy.dto.BookDTO;
+import com.shelfy.dto.ResponseDTO;
 import com.shelfy.service.AladinService;
 import com.shelfy.service.BookService;
 import lombok.RequiredArgsConstructor;
@@ -35,13 +36,13 @@ public class BookController {
      * @return List<BookDTO>
      */
     @GetMapping("/search")
-    public List<BookDTO> searchBooks(@RequestParam String query) {
+    public ResponseDTO<List<BookDTO>> searchBooks(@RequestParam String query) {
 
         log.info("책 검색 query : " + query);
         List<BookDTO> bookDTOList = bookService.searchBooks(query);
         log.info("책 검색 반환 bookDTOList : " + bookDTOList);
 
-        return bookDTOList;
+        return ResponseDTO.success(bookDTOList);
     }
 
     // 2차 검색 (ISBN으로 페이지 수 가져오기) - 책 검색 후 상세페이지
